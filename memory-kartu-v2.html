@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memory Kartu</title>
+<style>
+:root{--bg:#f6f4ef;--fg:#1d1d1f;--card:#fff;--back:#5b6cf0;--ok:#d6f2e0;--muted:#6b6b70;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141416;--fg:#f2f2f4;--card:#26262b;--back:#7b89ff;--ok:#1f4a31;--muted:#9a9aa2;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141416;--fg:#f2f2f4;--card:#26262b;--back:#7b89ff;--ok:#1f4a31;--muted:#9a9aa2;color-scheme:dark}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;align-items:center;padding:16px;box-sizing:border-box;user-select:none;-webkit-user-select:none}
+h1{font-size:1.4rem;margin:8px 0}
+.bar{display:flex;gap:12px;width:100%;max-width:360px;margin-bottom:12px}
+.bar div{flex:1;background:var(--card);border-radius:12px;padding:8px;text-align:center;font-size:.8rem;color:var(--muted)}
+.bar b{display:block;font-size:1.4rem;color:var(--fg)}
+#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:360px}
+.k{aspect-ratio:1;border:0;border-radius:14px;background:var(--back);font-size:2rem;cursor:pointer;color:transparent;transition:transform .25s;touch-action:manipulation}
+.k.open{background:var(--card);color:inherit;transform:rotateY(360deg)}
+.k.done{background:var(--ok);color:inherit}
+#msg{margin:16px 0 8px;min-height:1.5em;font-weight:600;text-align:center}
+#re{font:inherit;font-size:1rem;padding:10px 24px;border:0;border-radius:999px;background:var(--back);color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>🧠 Memory Kartu</h1>
+<div class="bar"><div>Langkah<b id="m">0</b></div><div>Terbaik<b id="b">-</b></div></div>
+<div id="grid"></div>
+<div id="msg">Cari semua pasangan gambar yang sama.</div>
+<button id="re">Acak Ulang</button>
+<script>
+/** @param {string} id */
+const $=id=>document.getElementById(id);
+const E=['🍎','🚀','🐱','⚽','🎸','🌵','🍕','🐳'];
+/** @type {HTMLButtonElement|null} */
+let first=null;
+let lock=false,moves=0,found=0,best=0;
+try{best=+localStorage.getItem('mk-best')||0}catch(e){}
+if(best)$('b').textContent=best;
+/** @param {string[]} a */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function init(){
+  first=null;lock=false;moves=0;found=0;
+  $('m').textContent=0;$('msg').textContent='Cari semua pasangan gambar yang sama.';
+  const g=$('grid');g.innerHTML='';
+  shuffle([...E,...E]).forEach((/** @type {string} */ e)=>{
+    const b=document.createElement('button');
+    b.className='k';b.textContent=e;b.dataset.e=e;
+    b.addEventListener('click',()=>flip(b));
+    g.appendChild(b);
+  });
+}
+/** @param {HTMLButtonElement} b */
+function flip(b){
+  if(lock||b.classList.contains('open')||b.classList.contains('done'))return;
+  b.classList.add('open');
+  if(!first){first=b;return}
+  moves++;$('m').textContent=moves;
+  if(first.dataset.e===b.dataset.e){
+    first.classList.replace('open','done');b.classList.replace('open','done');
+    first=null;found++;
+    if(found===E.length)win();
+  }else{
+    lock=true;
+    const a=first;first=null;
+    setTimeout(()=>{a.classList.remove('open');b.classList.remove('open');lock=false},700);
+  }
+}
+function win(){
+  let t='Selesai dalam '+moves+' langkah! 🎉';
+  if(!best||moves<best){best=moves;$('b').textContent=best;t+=' Rekor baru!';try{localStorage.setItem('mk-best',best)}catch(e){}}
+  $('msg').textContent=t;
+}
+$('re').addEventListener('click',init);
+init();
+</script>
+</body>
+</html>
